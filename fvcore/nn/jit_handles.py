@@ -322,13 +322,33 @@ def matmul_flop_jit(
     # Inputs contains the shapes of two matrices.
     input_shapes = [get_shape(v) for v in inputs]
     assert len(input_shapes) == 2, input_shapes
-    assert len(input_shapes[1]) == 2, input_shapes
-    assert input_shapes[0][-1] == input_shapes[1][0], input_shapes
-    batch_dim = input_shapes[0][0]
-    m1_dim, m2_dim = input_shapes[1]
-    flop = m1_dim * m2_dim * batch_dim
+    assert input_shapes[0][-1] == input_shapes[1][-2], input_shapes
+    #if len(input_shapes[1]) == 2:
+        #assert len(input_shapes[0]) == 2
+        #batch_dim = input_shapes[0][0]
+        #m1_dim, m2_dim = input_shapes[1]
+        #flop = m1_dim * m2_dim * batch_dim
+        #flop_counter = Counter({"matmul": flop})
+        #return flop_counter
+    #else:
+        #import ipdb;ipdb.set_trace(context=15)
+    assert input_shapes[0][-1] == input_shapes[1][-2]
+    flop = input_shapes[0][-2] * input_shapes[0][-1] * input_shapes[1][-1]
+    if len(input_shapes[0]) > 2 and len(input_shapes[1]) == 2:
+        for x in input_shapes[0][:-2]:
+            flop *= x
+    elif len(input_shapes[0]) == 2 and len(input_shapes[1]) > 2:
+        for x in input_shapes[1][:-2]:
+            flop *= x
+    elif len(input_shapes[0]) > 2 and len(input_shapes[1]) > 2:
+        assert tuple(input_shapes[0][:-2]) == tuple(input_shapes[1][:-2])
+        for x in input_shapes[1][:-2]:
+            flop *= x
+    else:
+        assert len(input_shapes[0]) == 2 and len(input_shapes[1]) == 2
     flop_counter = Counter({"matmul": flop})
     return flop_counter
+
 
 
 def batchnorm_flop_jit(
